@@ -2,16 +2,18 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, LogOut, UtensilsCrossed, Camera, TrendingDown, BarChart3, Sparkles, GraduationCap, ChefHat, Trophy, Plus, X } from "lucide-react";
+import { Leaf, LogOut, UtensilsCrossed, Camera, TrendingDown, BarChart3, Sparkles, GraduationCap, ChefHat, Trophy, Plus, Lightbulb, Trash2 } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 import { MealScanner } from "@/components/MealScanner";
 import { MenuViewer } from "@/components/MenuViewer";
 import { CarbonStats } from "@/components/CarbonStats";
 import { Leaderboard } from "@/components/Leaderboard";
+import { WasteLogger } from "@/components/WasteLogger";
+import { InsightsPanel } from "@/components/InsightsPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatDistanceToNow } from "date-fns";
 
-type ActivePanel = 'none' | 'scanner' | 'menu' | 'stats' | 'leaderboard';
+type ActivePanel = 'none' | 'scanner' | 'menu' | 'stats' | 'leaderboard' | 'waste' | 'insights';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -180,10 +182,18 @@ const Dashboard: React.FC = () => {
                 <Button 
                   variant="hero" 
                   className="h-auto py-6 flex-col gap-3"
-                  onClick={() => setActivePanel('scanner')}
+                  onClick={() => setActivePanel('waste')}
                 >
-                  <Camera className="w-6 h-6" />
+                  <Trash2 className="w-6 h-6" />
                   <span>Log Waste</span>
+                </Button>
+                <Button 
+                  variant="hero" 
+                  className="h-auto py-6 flex-col gap-3"
+                  onClick={() => setActivePanel('insights')}
+                >
+                  <Lightbulb className="w-6 h-6" />
+                  <span>AI Insights</span>
                 </Button>
                 <Button 
                   variant="hero" 
@@ -191,15 +201,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => setActivePanel('stats')}
                 >
                   <BarChart3 className="w-6 h-6" />
-                  <span>View Reports</span>
-                </Button>
-                <Button 
-                  variant="hero" 
-                  className="h-auto py-6 flex-col gap-3"
-                  onClick={() => setActivePanel('leaderboard')}
-                >
-                  <Trophy className="w-6 h-6" />
-                  <span>Leaderboard</span>
+                  <span>View Stats</span>
                 </Button>
               </>
             ) : (
@@ -210,7 +212,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => setActivePanel('menu')}
                 >
                   <UtensilsCrossed className="w-6 h-6" />
-                  <span>View Menus</span>
+                  <span>Today's Menu</span>
                 </Button>
                 <Button 
                   variant="hero" 
@@ -218,7 +220,7 @@ const Dashboard: React.FC = () => {
                   onClick={() => setActivePanel('scanner')}
                 >
                   <Camera className="w-6 h-6" />
-                  <span>Log Meal</span>
+                  <span>Scan Meal</span>
                 </Button>
                 <Button 
                   variant="hero" 
@@ -256,12 +258,23 @@ const Dashboard: React.FC = () => {
                 <div>
                   <p className="font-medium text-foreground">No activities yet</p>
                   <p className="text-sm text-muted-foreground">
-                    Start by logging a meal to track your carbon savings!
+                    {isCafeteria 
+                      ? "Start by adding items to today's menu!"
+                      : "Start by logging a meal to track your carbon savings!"}
                   </p>
                 </div>
-                <Button variant="eco" onClick={() => setActivePanel('scanner')}>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Log Your First Meal
+                <Button variant="eco" onClick={() => setActivePanel(isCafeteria ? 'menu' : 'menu')}>
+                  {isCafeteria ? (
+                    <>
+                      <UtensilsCrossed className="w-4 h-4 mr-2" />
+                      Add Menu Items
+                    </>
+                  ) : (
+                    <>
+                      <UtensilsCrossed className="w-4 h-4 mr-2" />
+                      View Today's Menu
+                    </>
+                  )}
                 </Button>
               </div>
             ) : (
@@ -299,7 +312,7 @@ const Dashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Camera className="w-5 h-5 text-primary" />
-              {isCafeteria ? "Log Food Waste" : "Log Your Meal"}
+              Scan Your Meal
             </DialogTitle>
           </DialogHeader>
           <MealScanner onComplete={closePanel} />
@@ -311,7 +324,7 @@ const Dashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UtensilsCrossed className="w-5 h-5 text-primary" />
-              {isCafeteria ? "Manage Menu" : "Today's Menu"}
+              {isCafeteria ? "Manage Today's Menu" : "Today's Menu"}
             </DialogTitle>
           </DialogHeader>
           <MenuViewer isCafeteria={isCafeteria} />
@@ -339,6 +352,30 @@ const Dashboard: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <Leaderboard currentUserStats={stats} currentUserName={user?.fullName || ''} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activePanel === 'waste'} onOpenChange={(open) => !open && closePanel()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-primary" />
+              Log Food Waste
+            </DialogTitle>
+          </DialogHeader>
+          <WasteLogger onComplete={closePanel} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activePanel === 'insights'} onOpenChange={(open) => !open && closePanel()}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-primary" />
+              AI Insights & Recommendations
+            </DialogTitle>
+          </DialogHeader>
+          <InsightsPanel />
         </DialogContent>
       </Dialog>
     </div>
