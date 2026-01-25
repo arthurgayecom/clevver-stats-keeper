@@ -33,11 +33,6 @@ export const CookieConsent: React.FC = () => {
     <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-slide-up">
       <Card variant="elevated" className="max-w-4xl mx-auto p-6">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-          <div className="flex-shrink-0">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center">
-              <Cookie className="w-7 h-7 text-primary" />
-            </div>
-          </div>
           
           <div className="flex-1 space-y-2">
             <h3 className="font-display font-bold text-lg text-foreground flex items-center gap-2">
