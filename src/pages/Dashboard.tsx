@@ -17,7 +17,7 @@ type ActivePanel = 'none' | 'scanner' | 'menu' | 'stats' | 'leaderboard' | 'wast
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, stats, activities, logout, isLoading } = useUser();
+  const { user, profile, activities, logout, isLoading } = useUser();
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
 
   // Redirect if not logged in
@@ -36,12 +36,20 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const handleSignOut = () => {
-    logout();
+  const handleSignOut = async () => {
+    await logout();
     navigate("/");
   };
 
-  const isCafeteria = user?.role === "cafeteria";
+  const isCafeteria = profile?.role === "cafeteria";
+
+  // Build stats from profile
+  const stats = {
+    carbonSaved: profile?.carbon_saved || 0,
+    mealsTracked: profile?.meals_tracked || 0,
+    impactScore: profile?.impact_score || 0,
+    currentStreak: profile?.current_streak || 0,
+  };
 
   const closePanel = () => setActivePanel('none');
 
@@ -71,7 +79,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
-                <p className="font-semibold text-foreground">{user?.fullName}</p>
+                <p className="font-semibold text-foreground">{profile?.full_name || 'User'}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
               <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
@@ -87,7 +95,7 @@ const Dashboard: React.FC = () => {
         {/* Welcome section */}
         <div className="mb-10 animate-fade-in">
           <h2 className="text-3xl md:text-4xl font-display font-bold mb-2">
-            Welcome back, <span className="eco-gradient-text">{user?.fullName?.split(' ')[0]}</span>!
+            Welcome back, <span className="eco-gradient-text">{profile?.full_name?.split(' ')[0] || 'there'}</span>!
           </h2>
           <p className="text-muted-foreground flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -103,7 +111,7 @@ const Dashboard: React.FC = () => {
             {
               icon: TrendingDown,
               title: "Carbon Saved",
-              value: `${stats.carbonSaved.toFixed(1)} kg`,
+              value: `${Number(stats.carbonSaved).toFixed(1)} kg`,
               subtitle: "This month",
               color: "text-primary",
             },
@@ -291,12 +299,12 @@ const Dashboard: React.FC = () => {
                       <div>
                         <p className="font-medium text-foreground">{activity.action}</p>
                         <p className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(activity.date), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
                         </p>
                       </div>
                     </div>
                     <span className="text-primary font-semibold">
-                      -{activity.carbonSaved.toFixed(1)} kg CO₂
+                      -{Number(activity.carbon_saved).toFixed(1)} kg CO₂
                     </span>
                   </div>
                 ))}
@@ -351,7 +359,7 @@ const Dashboard: React.FC = () => {
               Leaderboard
             </DialogTitle>
           </DialogHeader>
-          <Leaderboard currentUserStats={stats} currentUserName={user?.fullName || ''} />
+          <Leaderboard currentUserStats={stats} currentUserName={profile?.full_name || ''} />
         </DialogContent>
       </Dialog>
 

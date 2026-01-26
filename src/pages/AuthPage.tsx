@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Leaf, GraduationCap, ChefHat, KeyRound, Copy, Check, Sparkles, ArrowLeft } from "lucide-react";
+import { Leaf, GraduationCap, ChefHat, Sparkles, ArrowLeft, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { useUser } from "@/contexts/UserContext";
 
@@ -26,22 +26,18 @@ const AuthPage: React.FC = () => {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<UserRole>(initialRole);
   const [isLoading, setIsLoading] = useState(false);
-  const [showRecovery, setShowRecovery] = useState(false);
-  const [recoveryKey, setRecoveryKey] = useState("");
-  const [newRecoveryKey, setNewRecoveryKey] = useState("");
-  const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, register, user } = useUser();
+  const { login, register, user, isLoading: authLoading } = useUser();
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    if (!authLoading && user) {
       navigate("/dashboard");
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Auto-switch to signup when role is passed from landing page
   useEffect(() => {
@@ -93,32 +89,32 @@ const AuthPage: React.FC = () => {
 
     try {
       if (isLogin) {
-        const success = await login(email, password);
-        if (success) {
+        const result = await login(email, password);
+        if (result.success) {
           toast({
-            title: "Welcome back!",
+            title: "Welcome back! 🌱",
             description: "You have successfully logged in.",
           });
           navigate("/dashboard");
         } else {
           toast({
             title: "Login failed",
-            description: "Invalid email or password. Please try again.",
+            description: result.error || "Invalid email or password. Please try again.",
             variant: "destructive",
           });
         }
       } else {
         const result = await register(email, password, fullName, role);
-        if (result.success && result.recoveryKey) {
-          setNewRecoveryKey(result.recoveryKey);
+        if (result.success) {
           toast({
-            title: "Account Created!",
-            description: "Please save your recovery key.",
+            title: "Account Created! 🎉",
+            description: "Welcome to EcoTaste Buds! You are now logged in.",
           });
+          navigate("/dashboard");
         } else {
           toast({
             title: "Registration failed",
-            description: "An account with this email already exists.",
+            description: result.error || "Could not create account. Please try again.",
             variant: "destructive",
           });
         }
@@ -134,145 +130,15 @@ const AuthPage: React.FC = () => {
     }
   };
 
-  const copyRecoveryKey = () => {
-    navigator.clipboard.writeText(newRecoveryKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: "Copied!",
-      description: "Recovery key copied to clipboard.",
-    });
-  };
-
-  const proceedAfterRecoveryKey = () => {
-    setNewRecoveryKey("");
-    toast({
-      title: "Account Created!",
-      description: "You can now log in with your credentials.",
-    });
-    setIsLogin(true);
-    setEmail("");
-    setPassword("");
-    setFullName("");
-  };
-
-  // Recovery key display
-  if (newRecoveryKey) {
+  // Show loading while checking auth state
+  if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative">
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-[300px] h-[300px] bg-accent/10 rounded-full blur-[120px]" />
-        </div>
-
-        <Card variant="elevated" className="w-full max-w-md animate-scale-in relative">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center shadow-glow">
-              <KeyRound className="w-10 h-10 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Save Your Recovery Key</CardTitle>
-            <CardDescription>
-              This key is the only way to recover your account if you forget your password. Store it somewhere safe!
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="relative group">
-              <div className="glass-strong p-5 rounded-xl font-mono text-center text-lg tracking-widest border border-primary/30 group-hover:border-primary/50 transition-colors">
-                {newRecoveryKey}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                onClick={copyRecoveryKey}
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-primary" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-sm text-muted-foreground text-center">
-              ⚠️ This key will only be shown once. Write it down or save it securely.
-            </p>
-            <Button onClick={proceedAfterRecoveryKey} variant="eco" className="w-full" size="lg">
-              I've Saved My Recovery Key
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Recovery form
-  if (showRecovery) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative">
-        <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[150px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-[300px] h-[300px] bg-accent/10 rounded-full blur-[120px]" />
-        </div>
-
-        <Card variant="elevated" className="w-full max-w-md animate-scale-in relative">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 flex items-center justify-center shadow-glow">
-              <KeyRound className="w-10 h-10 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Account Recovery</CardTitle>
-            <CardDescription>
-              Enter your email and recovery key to reset your password
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="recovery-email">Email</Label>
-              <Input
-                id="recovery-email"
-                type="email"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recovery-key">Recovery Key</Label>
-              <Input
-                id="recovery-key"
-                type="text"
-                placeholder="XXXX-XXXX-XXXX-XXXX"
-                value={recoveryKey}
-                onChange={(e) => setRecoveryKey(e.target.value.toUpperCase())}
-              />
-            </div>
-            <Button 
-              variant="eco" 
-              className="w-full" 
-              size="lg"
-              onClick={() => {
-                toast({
-                  title: "Recovery feature",
-                  description: "This would verify your recovery key and allow password reset.",
-                });
-              }}
-            >
-              Recover Account
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={() => setShowRecovery(false)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Main auth form
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <div className="fixed inset-0 pointer-events-none">
@@ -397,19 +263,17 @@ const AuthPage: React.FC = () => {
                 disabled={isLoading}
                 variant="eco"
               >
-                {isLoading ? "Please wait..." : isLogin ? "Login" : "Create Account"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Please wait...
+                  </>
+                ) : isLogin ? (
+                  "Login"
+                ) : (
+                  "Create Account"
+                )}
               </Button>
-
-              {isLogin && (
-                <Button
-                  type="button"
-                  variant="link"
-                  className="w-full text-muted-foreground hover:text-primary"
-                  onClick={() => setShowRecovery(true)}
-                >
-                  Forgot password? Use recovery key
-                </Button>
-              )}
             </form>
           </CardContent>
         </Card>
