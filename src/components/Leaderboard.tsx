@@ -1,7 +1,13 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, Medal, Award, User } from "lucide-react";
-import { UserStats } from "@/lib/cookies";
+import { Trophy, Medal, Award } from "lucide-react";
+
+interface UserStats {
+  carbonSaved: number;
+  mealsTracked: number;
+  impactScore: number;
+  currentStreak: number;
+}
 
 interface LeaderboardProps {
   currentUserStats: UserStats;

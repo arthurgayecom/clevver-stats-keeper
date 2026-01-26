@@ -5,16 +5,25 @@ import { TrendingDown, Leaf, Target, Award, Calendar } from "lucide-react";
 import { useUser } from "@/contexts/UserContext";
 
 export const CarbonStats: React.FC = () => {
-  const { stats, meals } = useUser();
+  const { profile, meals } = useUser();
+
+  const stats = {
+    carbonSaved: profile?.carbon_saved || 0,
+    mealsTracked: profile?.meals_tracked || 0,
+    impactScore: profile?.impact_score || 0,
+    currentStreak: profile?.current_streak || 0,
+  };
 
   const weeklyGoal = 10; // kg CO₂ saved goal
   const progressPercent = Math.min(100, (stats.carbonSaved / weeklyGoal) * 100);
 
   // Calculate category breakdown
   const categoryBreakdown = meals.reduce((acc, meal) => {
-    meal.foods.forEach(food => {
-      acc[food.category] = (acc[food.category] || 0) + 1;
-    });
+    if (Array.isArray(meal.foods)) {
+      meal.foods.forEach(food => {
+        acc[food.category] = (acc[food.category] || 0) + 1;
+      });
+    }
     return acc;
   }, {} as Record<string, number>);
 
