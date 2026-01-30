@@ -1,3 +1,4 @@
+
 -- Create role enum
 CREATE TYPE public.user_role AS ENUM ('student', 'cafeteria');
 
