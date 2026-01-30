@@ -1,5 +1,6 @@
 // Cookie utility functions
 
+
 export const COOKIE_CONSENT_KEY = 'ecotaste_cookie_consent';
 export const USER_SESSION_KEY = 'ecotaste_user_session';
 export const USER_DATA_KEY = 'ecotaste_user_data';
